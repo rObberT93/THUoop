@@ -349,4 +349,194 @@ public:
 };
 ```
 ## 课后
-### get_type(x)
+### 如何再c++中打印变量类型
+- ``abi::__cxa_demangle`` 函数
+  - 不是标准库中的函数
+  - 是由GNU C++ 提供的扩展
+  - 跨平台运行不要使用这个函数，可能不受其他编译器的支持
+```cpp
+#include <iostream>
+#include<typeinfo>
+#include<cxxabi.h>
+using namespace std;
+
+template<typename T>
+char* get_type(const T& instance){
+    return abi::__cxa_demangle(typeid((instance)).name(), nullptr, nullptr, nullptr);
+}
+
+int main() {
+    auto *x = "abc";
+    cout << get_type(x) << endl;
+    cout << typeid(x).name() << endl;
+}
+```
+- typeid
+
+### 实现class
+- 下面是一个类的声明
+  - 请提供成员函数的实现（注意实现和定义分开）
+  - 并测试这个类是否正常运行（你还需要测试访问权限）
+```cpp
+// move.h
+class Move {
+  private:
+    double x;
+    double y;
+    double calc(); // calculate x * y
+  public:
+    Move(double a = 0, double b = 0);
+    void display(); // display the result of calc()
+    double get_x(); // return x
+    double get_y(); // return y
+    void reset(double a = 0, double b = 0); // reset x and y to a and b
+};
+```
+```cpp
+// move.cpp
+#include "move.h"
+#include <iostream>
+
+double Move::calc() {
+    return x * y;
+}
+
+Move::Move(double a, double b) {
+    x = a;
+    y = b;
+}
+
+void Move::display() {
+    std::cout << "Result of calc(): " << calc() << std::endl;
+}
+
+double Move::get_x() {
+    return x;
+}
+
+double Move::get_y() {
+    return y;
+}
+
+void Move::reset(double a, double b) {
+    x = a;
+    y = b;
+}
+```
+```cpp
+// main.cpp
+#include <iostream>
+#include "move.h" // 头文件，包含类的声明
+using namespace std;
+int main() {
+    Move m(2.5, 3.5);
+    
+    // 访问私有成员变量 x 和 y 的值
+    cout << "x = " << m.get_x() << endl; // 2.5
+    cout << "y = " << m.get_y() << endl; // 3.5
+    
+    // 显示计算结果
+    cout << "calc() = "; // 8.75
+    m.display();
+    
+    // 重置 x 和 y 的值
+    m.reset(1.0, 2.0);
+    
+    // 显示计算结果
+    std::cout << "calc() = ";
+    m.display(); // 2
+    
+    return 0;
+}
+```
+### 函数重载，缺省值
+- 函数重载、参数默认值
+  - 编写一个接受一个字符串参数，并打印该字符串的函数。
+  - 如果提供了第二个参数（bool 类型），且该参数为 true，则该函数打印 n 次字符串，其中 n 是该函数被调用的次数
+
+
+```cpp
+#include <iostream>
+#include <string>
+using namespace std;
+void f(const string& str, bool repeat = false) {
+    cout << str << endl;
+    if (repeat) {
+        static int count = 0;  // 静态变量，记录函数被调用的次数
+        ++count;
+        for (int i = 1; i < count; ++i) {
+            cout << str << endl;
+        }
+    }
+}
+
+int main() {
+    f("OOP0");
+    f("OOP1");
+    f("OOP2", true);
+    f("OOP3", false);
+    f("OOP4", true);
+    return 0;
+}
+```
+### 内联函数
+- 内联函数
+创建两个功能相同的函数``f1() f2()``。f1() 是内联函数，f2() 是非内联函数。使用 ``<ctime>`` 中的标准 C 函数 ``clock()``标记这两个函数的开始点和结束点，比较它们哪一个运行的更快，为了得到有效数字，也许需要在计时循环中重复调用这两个函数。
+
+注意：由于编译器可能会忽略inline或自动执行其他优化。该特性和编译器优化指令有关，如"-O2"。
+```cpp
+#include <iostream>
+#include <ctime>
+using namespace std;
+int x = 0;
+int y = 0;
+int z = 0;
+inline void f1() {
+    for (int i = 0; i < 1000000; i++) {
+        x += 1;
+    }
+}
+
+void f2() {
+    for (int i = 0; i < 1000000; i++) {
+        y += 1;
+    }
+}
+
+int main() {
+    clock_t start, end;
+    double cpu_time_used;
+
+    // Timing f1
+    start = clock();
+    for (int i = 0; i < 1000; i++) {
+        f1();
+    }
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    cout << "Time taken by f1: " << cpu_time_used << " seconds\n"; // Time taken by f1: 1.72 seconds
+
+    // Timing f2
+    start = clock();
+    for (int i = 0; i < 1000; i++) {
+        f2();
+    }
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    cout << "Time taken by f2: " << cpu_time_used << " seconds\n"; // Time taken by f2: 1.744 seconds
+
+    // Timing f3
+    start = clock();
+    for (int i = 0; i < 1000; i++) {
+        for(int i = 0; i < 1000000; i++) {
+            z += 1;
+        }
+    }
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    cout << "Time taken by f2: " << cpu_time_used << " seconds\n"; // Time taken by f2: 1.814 seconds
+
+
+    return 0;
+}
+```
